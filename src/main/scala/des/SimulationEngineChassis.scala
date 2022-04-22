@@ -8,7 +8,7 @@ import com.selfdualbrain.continuum.time.{SimTimepoint, TimeDelta}
   * @param engine underlying simulation engine
   * @tparam A type of agent identifiers
   */
-class SimulationEngineChassis[A,P](engine: SimulationEngine[A,P]) extends ObservableSimulationEngine[A,P] {
+class SimulationEngineChassis[A,P](engine: SimulationEngine[A]) extends ObservableSimulationEngine[A,P] {
   private var observersX: Seq[SimulationObserver[A]] = Seq.empty
 
   override def addObserver(observer: SimulationObserver[A]): Unit = {

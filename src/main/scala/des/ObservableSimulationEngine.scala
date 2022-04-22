@@ -7,7 +7,7 @@ package com.selfdualbrain.continuum.des
   *
   * @tparam A type of agent identifiers
   */
-trait ObservableSimulationEngine[A,P] extends SimulationEngine[A,P] {
+trait ObservableSimulationEngine[A,P] extends SimulationEngine[A] {
 
   def addObserver(observer: SimulationObserver[A]): Unit
 

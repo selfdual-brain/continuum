@@ -15,7 +15,7 @@ import com.selfdualbrain.continuum.time.{SimTimepoint, TimeDelta}
   *
   * @tparam A type of agent identifiers
   */
-trait SimulationEngine[A,P] extends Iterator[(Long, Event[A])] {
+trait SimulationEngine[A] extends Iterator[(Long, Event[A])] {
 
   //Tells the step-id of last event pulled from the iterator.
   //Caution: first event in the simulation has step=id=0.
