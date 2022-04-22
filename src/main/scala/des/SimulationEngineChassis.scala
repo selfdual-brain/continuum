@@ -9,13 +9,13 @@ import com.selfdualbrain.continuum.time.{SimTimepoint, TimeDelta}
   * @tparam A type of agent identifiers
   */
 class SimulationEngineChassis[A,P](engine: SimulationEngine[A,P]) extends ObservableSimulationEngine[A,P] {
-  private var observersX: Seq[SimulationObserver[A,P]] = Seq.empty
+  private var observersX: Seq[SimulationObserver[A]] = Seq.empty
 
-  override def addObserver(observer: SimulationObserver[A,P]): Unit = {
+  override def addObserver(observer: SimulationObserver[A]): Unit = {
     observersX = observersX.appended(observer)
   }
 
-  override def observers: Iterable[SimulationObserver[A,P]] = observersX
+  override def observers: Iterable[SimulationObserver[A]] = observersX
 
   override def lastStepEmitted: Long = engine.lastStepEmitted
 
@@ -33,7 +33,7 @@ class SimulationEngineChassis[A,P](engine: SimulationEngine[A,P]) extends Observ
 
   override def totalConsumedProcessingTimeOfAgent(agent: A): TimeDelta = engine.totalConsumedProcessingTimeOfAgent(agent)
 
-  override def next(): (Long, Event[A,P]) = {
+  override def next(): (Long, Event[A]) = {
     val pair = engine.next() //no pattern matching here so to reuse the same tuple instance (= minimize overhead if there is no observers)
     for (observer <- observers)
       observer.onSimulationEvent(pair._1, pair._2)

@@ -6,32 +6,31 @@ import com.selfdualbrain.continuum.time.SimTimepoint
   * Contract of DES event queue.
   *
   * @tparam A type of agent id
-  * @tparam P agent messages payload type
   */
-trait SimEventsQueue[A,P] extends Iterator[Event[A,P]] {
+trait SimEventsQueue[A] extends Iterator[Event[A]] {
 
   /**
     * Adds an event to the timeline.
     */
-  def addExternalEvent(timepoint: SimTimepoint, destination: A, payload: P): Event[A,P]
+  def addExternalEvent(timepoint: SimTimepoint, filteringTag: Int, destination: A, payload: AnyRef): Event[A]
 
   /**
     * Adds an event to the timeline.
     */
-  def addTransportEvent(timepoint: SimTimepoint, source: A, destination: A, payload: P): Event[A,P]
+  def addTransportEvent(timepoint: SimTimepoint, filteringTag: Int, source: A, destination: A, payload: AnyRef): Event[A]
 
   /**
     * Adds an event to the timeline.
     */
-  def addLoopbackEvent(timepoint: SimTimepoint, agent: A, payload: P): Event[A,P]
+  def addLoopbackEvent(timepoint: SimTimepoint, filteringTag: Int, agent: A, payload: AnyRef): Event[A]
 
   /**
     * Adds an event to the timeline.
     */
-  def addOutputEvent(timepoint: SimTimepoint, source: A, payload: P): Event[A,P]
+  def addOutputEvent(timepoint: SimTimepoint, filteringTag: Int, source: A, payload: AnyRef): Event[A]
 
 
-  def addEngineEvent(timepoint: SimTimepoint, agent: Option[A], payload: P): Event[A,P]
+  def addEngineEvent(timepoint: SimTimepoint, filteringTag: Int, agent: Option[A], payload: AnyRef): Event[A]
 
   /**
     * Time of last event pulled.
@@ -40,18 +39,27 @@ trait SimEventsQueue[A,P] extends Iterator[Event[A,P]] {
 
 }
 
-case class ExtEventIngredients[A,EP](timepoint: SimTimepoint, destination: A, payload: EP)
+case class ExtEventIngredients[A](timepoint: SimTimepoint, filteringTag: Int, destination: A, payload: AnyRef)
 
 /**
   * Base class of (business-logic-independent) event envelopes to be used with SimEventsQueue.
   * @tparam A type of agent identifier
   */
-sealed trait Event[A,P] extends Ordered[Event[A,P]] {
+sealed trait Event[A] extends Ordered[Event[A]] {
+
   def id: Long
+
+  /**
+    * Using integer constants as the main dispatching mechanism ensures top-performance in the critical loop of a simulator,
+    * while allowing open-ended approach to the set of event types.
+    * In a typical simulator there will be several layers using the underlying events queue.
+    * We want to keep these layers separate, hence all event types cannot be captured as a single algebraic data type.
+    */
+  def filteringTag: Int
 
   def timepoint: SimTimepoint
 
-  override def compare(that: Event[A,P]): Int = {
+  override def compare(that: Event[A]): Int = {
     val timeDiff = timepoint.compare(that.timepoint)
     return if (timeDiff != 0)
       timeDiff
@@ -61,10 +69,10 @@ sealed trait Event[A,P] extends Ordered[Event[A,P]] {
 
   def loggingAgent: Option[A]
 
-  def payload: P
+  def payload: AnyRef
 }
 
-object Event  {
+object Event {
 
   /**
     * Envelope for "external events".
@@ -76,9 +84,8 @@ object Event  {
     * @param destination recipient agent
     * @param payload business-logic-specific payload
     * @tparam A type of agent identifier
-    * @tparam P type of business-logic-specific payload
     */
-  case class External[A,P](id: Long, timepoint: SimTimepoint, destination: A, payload: P) extends Event[A,P] {
+  case class External[A](id: Long, filteringTag: Int, timepoint: SimTimepoint, destination: A, payload: AnyRef) extends Event[A] {
     override def loggingAgent: Option[A] = Some(destination)
   }
 
@@ -95,7 +102,7 @@ object Event  {
     * @tparam A type of agent identifier
     * @tparam P type of business-logic-specific payload
     */
-  case class Transport[A,P](id: Long, timepoint: SimTimepoint, source: A, destination: A, payload: P) extends Event[A,P] {
+  case class Transport[A](id: Long, filteringTag: Int, timepoint: SimTimepoint, source: A, destination: A, payload: AnyRef) extends Event[A] {
     override def loggingAgent: Option[A] = Some(destination)
   }
 
@@ -109,9 +116,8 @@ object Event  {
     * @param agent agent scheduling this event
     * @param payload business-logic-specific payload
     * @tparam A type of agent identifier
-    * @tparam P type of business-logic-specific payload
     */
-  case class Loopback[A,P](id: Long, timepoint: SimTimepoint, agent: A, payload: P) extends Event[A,P] {
+  case class Loopback[A](id: Long, filteringTag: Int, timepoint: SimTimepoint, agent: A, payload: AnyRef) extends Event[A] {
     override def loggingAgent: Option[A] = Some(agent)
   }
 
@@ -125,9 +131,8 @@ object Event  {
     * @param agent relevant agent (if present)
     * @param payload business-logic-specific payload
     * @tparam A type of agent identifier
-    * @tparam P type of business-logic-specific payload
     */
-  case class Engine[A,P](id: Long, timepoint: SimTimepoint, agent: Option[A], payload: P) extends Event[A,P] {
+  case class Engine[A](id: Long, filteringTag: Int, timepoint: SimTimepoint, agent: Option[A], payload: AnyRef) extends Event[A] {
     override def loggingAgent: Option[A] = agent
   }
 
@@ -142,9 +147,8 @@ object Event  {
     * @param source reporting agent
     * @param payload business-logic-specific payload
     * @tparam A type of agent identifier
-    * @tparam P type of business-logic-specific payload
     */
-  case class Semantic[A,P](id: Long, timepoint: SimTimepoint, source: A, payload: P) extends Event[A,P] {
+  case class Semantic[A](id: Long, filteringTag: Int, timepoint: SimTimepoint, source: A, payload: AnyRef) extends Event[A] {
     override def loggingAgent: Option[A] = Some(source)
   }
 
